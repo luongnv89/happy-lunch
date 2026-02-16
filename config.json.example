@@ -1,0 +1,7 @@
+{
+  "workspaceRoot": "/path/to/your/workspace",
+  "allowedTelegramUsers": [123456789],
+  "allowedTools": ["claude", "codex"],
+  "startupTimeoutMs": 8000,
+  "auditLogDir": "./logs"
+}
