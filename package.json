@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "description": "Telegram Happy Dashboard Launcher — secure launch gateway for Happy CLI sessions",
   "main": "dist/index.js",
+  "bin": {
+    "happycli": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cli": "node dist/cli.js",
+    "cli:dev": "tsx src/cli.ts"
   },
   "keywords": [
     "telegram",
