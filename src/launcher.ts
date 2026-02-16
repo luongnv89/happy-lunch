@@ -105,6 +105,10 @@ function launchInTmux(
   const session = tmuxSessionName(tool, projectPath);
   const cmdString = args.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
 
+  // Clean environment: remove vars that prevent nested Claude Code sessions
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.CLAUDECODE;
+
   return new Promise<LaunchResult>((resolve) => {
     // Kill existing session with the same name (if any) to avoid conflicts
     execFile("tmux", ["kill-session", "-t", session], () => {
@@ -112,7 +116,7 @@ function launchInTmux(
       const child = spawn(
         "tmux",
         ["new-session", "-d", "-s", session, "-c", projectPath, cmdString],
-        { detached: true, stdio: "ignore" }
+        { detached: true, stdio: "ignore", env: cleanEnv }
       );
 
       let settled = false;
