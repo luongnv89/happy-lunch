@@ -1,19 +1,154 @@
 # happy-lunch
 
-Standalone project for the **Telegram Happy Dashboard Launcher** concept.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)](https://nodejs.org/)
 
-## Scope
-This repository contains planning documents for a secure Telegram dashboard that launches Happy sessions in selected projects without modifying Happy itself.
+A secure Telegram bot that launches [Happy](https://github.com/your-happy-repo) CLI sessions in local projects. Authorized users select a project and tool via Telegram, and the bot spawns a detached Happy process — no upstream modifications required.
 
-## Docs
-- `docs/idea.md`
-- `docs/validate.md`
-- `docs/prd.md`
-- `docs/tasks.md`
+## Key Features
 
-## Core POC Principles
-- Keep Happy independent (no upstream code modifications)
-- Deterministic flow: project -> tool -> execute -> status
-- Template-only launches (`happy`, `happy codex`)
-- Strict allowlists (users/tools/workspaceRoot)
-- Structured audit logs in dedicated folder
+- **Security-first** — Strict allowlists for users, tools, and workspace paths
+- **Template-only execution** — No arbitrary commands; only predefined templates (`happy`, `happy codex`)
+- **Deterministic UX** — Forced workflow: select project → select tool → launch → status
+- **Path boundary enforcement** — Canonicalized paths with symlink escape prevention
+- **Audit logging** — Structured JSONL logs for every action (success, failure, denied)
+- **Graceful shutdown** — Clean process cleanup on SIGINT/SIGTERM
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js >= 18
+- A [Telegram Bot Token](https://core.telegram.org/bots#how-do-i-create-a-bot) from @BotFather
+- Your Telegram user ID (numeric)
+
+### Installation
+
+```bash
+git clone https://github.com/luongnv89/happy-lunch.git
+cd happy-lunch
+npm install
+```
+
+### Configuration
+
+1. Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your Telegram bot token:
+
+```
+TELEGRAM_BOT_TOKEN=your-bot-token-here
+```
+
+2. Create your config file:
+
+```bash
+cp config.json.example config.json
+```
+
+Edit `config.json`:
+
+```json
+{
+  "workspaceRoot": "/path/to/your/workspace",
+  "allowedTelegramUsers": [123456789],
+  "allowedTools": ["claude", "codex"],
+  "startupTimeoutMs": 8000,
+  "auditLogDir": "./logs"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `workspaceRoot` | Absolute path to the directory containing your projects |
+| `allowedTelegramUsers` | Array of numeric Telegram user IDs authorized to use the bot |
+| `allowedTools` | Tools available for launching (`claude` → `happy`, `codex` → `happy codex`) |
+| `startupTimeoutMs` | How long to wait for a spawned process before declaring success (default: 8000) |
+| `auditLogDir` | Directory for JSONL audit logs (default: `./logs`) |
+
+### Run
+
+```bash
+# Development (with hot reload)
+npm run dev
+
+# Production
+npm run build
+npm start
+```
+
+### Usage
+
+Open your Telegram bot and use these commands:
+
+| Command | Description |
+|---------|-------------|
+| `/launch` | Start a Happy session (project → tool → execute) |
+| `/projects` | List available projects under workspace root |
+| `/status` | Show current conversation state |
+| `/cancel` | Cancel the current flow |
+
+## Project Structure
+
+```
+happy-lunch/
+├── src/
+│   ├── index.ts        # Entry point — loads env, config, starts bot
+│   ├── config.ts       # Config loading & Zod validation
+│   ├── types.ts        # Shared types, schemas, error taxonomy
+│   ├── bot.ts          # Telegram command handlers & UX flow
+│   ├── workspace.ts    # Project discovery & path validation
+│   ├── launcher.ts     # Process spawning & timeout handling
+│   └── audit.ts        # JSONL audit logging
+├── tests/              # Unit tests (Vitest)
+├── docs/               # Project documentation
+├── config.json.example # Config template
+├── .env.example        # Environment template
+├── tsconfig.json       # TypeScript configuration
+└── package.json
+```
+
+## Tech Stack
+
+- **Runtime**: Node.js + TypeScript (ES2022, strict mode)
+- **Bot Framework**: [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api)
+- **Validation**: [Zod](https://zod.dev)
+- **Testing**: [Vitest](https://vitest.dev)
+- **Environment**: [dotenv](https://github.com/motdotla/dotenv)
+
+## Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+The test suite covers config validation, workspace path traversal prevention, process launching, and audit logging (33 tests across 4 suites).
+
+## Security Model
+
+The bot enforces multiple layers of protection:
+
+1. **User allowlist** — Only numeric Telegram IDs in `allowedTelegramUsers` can interact
+2. **Tool allowlist** — Only tools in `allowedTools` can be launched
+3. **Workspace boundary** — `fs.realpathSync()` + `path.relative()` prevents escaping the workspace root
+4. **Project name validation** — Regex `/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/` rejects malicious names
+5. **Index-based callbacks** — Inline keyboard uses indices, not user-controlled strings
+6. **Template-only commands** — No arbitrary shell execution; only predefined tool templates
+7. **Audit trail** — Every action logged to JSONL with user ID, timestamps, and reason codes
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and how to submit changes.
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer rounded square — black background -->
+  <rect width="64" height="64" rx="14" fill="#0A0A0A"/>
+  <!-- Subtle inner border for depth -->
+  <rect x="2" y="2" width="60" height="60" rx="12" stroke="#2A2A2A" stroke-width="0.5" fill="none"/>
+  <!-- Rocket body — white -->
+  <path d="M32 12C32 12 22 22 22 36C22 42 26 47 32 47C38 47 42 42 42 36C42 22 32 12 32 12Z" fill="#FFFFFF"/>
+  <!-- Window/porthole — black cutout -->
+  <circle cx="32" cy="30" r="5" fill="#0A0A0A"/>
+  <!-- Window ring — green highlight -->
+  <circle cx="32" cy="30" r="5" stroke="#00E676" stroke-width="0.8" fill="none"/>
+  <!-- Smile arc — bright green highlight -->
+  <path d="M24 51C24 51 28 55.5 32 55.5C36 55.5 40 51 40 51" stroke="#00E676" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Left exhaust — gray -->
+  <path d="M28 47L26 53L30 49Z" fill="#6B6B6B"/>
+  <!-- Right exhaust — gray -->
+  <path d="M36 47L38 53L34 49Z" fill="#6B6B6B"/>
+</svg>
