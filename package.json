@@ -15,9 +15,24 @@
     "bot",
     "happy",
     "launcher",
-    "dashboard"
+    "dashboard",
+    "cli",
+    "typescript",
+    "security"
   ],
+  "author": "luongnv89",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luongnv89/happy-lunch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/luongnv89/happy-lunch/issues"
+  },
+  "homepage": "https://github.com/luongnv89/happy-lunch#readme",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "dotenv": "^16.4.7",
     "node-telegram-bot-api": "^0.66.0",
