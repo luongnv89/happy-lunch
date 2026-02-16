@@ -49,27 +49,27 @@
 ### Parallel Execution Groups
 
 **Wave 1**
-- [ ] Task 1.1: Define policy config schema + startup validation
+- [x] Task 1.1: Define policy config schema + startup validation
 
 **Wave 2**
-- [ ] Task 1.2: Workspace project discovery + boundary checks
-- [ ] Task 1.4: Template-only launcher + timeout/reason taxonomy
+- [x] Task 1.2: Workspace project discovery + boundary checks
+- [x] Task 1.4: Template-only launcher + timeout/reason taxonomy
 
 **Wave 3**
-- [ ] Task 1.3: Deterministic Telegram selection UX
-- [ ] Task 2.2: Command execution acknowledger
+- [x] Task 1.3: Deterministic Telegram selection UX
+- [x] Task 2.2: Command execution acknowledger
 
 **Wave 4**
-- [ ] Task 2.1: Structured audit logging
+- [x] Task 2.1: Structured audit logging
 
 **Wave 5**
-- [ ] Task 2.3: Linux + macOS integration matrix
+- [x] Task 2.3: Linux + macOS integration matrix
 
 **Wave 6**
-- [ ] Task 3.1: End-to-end POC validation
+- [x] Task 3.1: End-to-end POC validation
 
 **Wave 7**
-- [ ] Task 3.2: MVP signoff package
+- [x] Task 3.2: MVP signoff package
 
 ### Critical Path
 
@@ -88,9 +88,9 @@
 **Description**: Create and validate configuration schema for allowlists, workspace root, timeout, and log directory.
 
 **Acceptance Criteria**:
-- [ ] Config fields include: `workspaceRoot`, `allowedTelegramUsers`, `allowedTools`, `startupTimeoutMs`, `auditLogDir`
-- [ ] Service fails fast with clear startup errors on invalid/missing config
-- [ ] Default tool policy supports `claude` and optional `codex`
+- [x] Config fields include: `workspaceRoot`, `allowedTelegramUsers`, `allowedTools`, `startupTimeoutMs`, `auditLogDir`
+- [x] Service fails fast with clear startup errors on invalid/missing config
+- [x] Default tool policy supports `claude` and optional `codex`
 
 **Dependencies**: None
 
@@ -103,9 +103,9 @@
 **Description**: Build project listing that only exposes subfolders under canonicalized `workspaceRoot`.
 
 **Acceptance Criteria**:
-- [ ] `/projects` list only includes directories inside `workspaceRoot`
-- [ ] Path canonicalization prevents traversal escapes
-- [ ] Out-of-bound or missing project selections return `PATH_DENIED`/`PROJECT_NOT_FOUND`
+- [x] `/projects` list only includes directories inside `workspaceRoot`
+- [x] Path canonicalization prevents traversal escapes
+- [x] Out-of-bound or missing project selections return `PATH_DENIED`/`PROJECT_NOT_FOUND`
 
 **Dependencies**: Task 1.1
 
@@ -118,9 +118,9 @@
 **Description**: Implement strict interaction flow: select project -> select tool -> execute -> status.
 
 **Acceptance Criteria**:
-- [ ] No free-text command execution path is exposed
-- [ ] User cannot skip required selection steps
-- [ ] Tool options shown are constrained by policy allowlist
+- [x] No free-text command execution path is exposed
+- [x] User cannot skip required selection steps
+- [x] Tool options shown are constrained by policy allowlist
 
 **Dependencies**: Task 1.1, 1.2
 
@@ -133,9 +133,9 @@
 **Description**: Execute fixed launch templates with standardized startup timeout and explicit reason codes.
 
 **Acceptance Criteria**:
-- [ ] `claude -> happy`, `codex -> happy codex` mapping is hardcoded/templated only
-- [ ] Launch result returns `success` or categorized fail reason (`TOOL_NOT_FOUND`, `STARTUP_TIMEOUT`, etc.)
-- [ ] `startupTimeoutMs` enforced in execution pipeline
+- [x] `claude -> happy`, `codex -> happy codex` mapping is hardcoded/templated only
+- [x] Launch result returns `success` or categorized fail reason (`TOOL_NOT_FOUND`, `STARTUP_TIMEOUT`, etc.)
+- [x] `startupTimeoutMs` enforced in execution pipeline
 
 **Dependencies**: Task 1.1
 
@@ -150,9 +150,9 @@
 **Description**: Add JSONL audit logging for all deny/allow/launch outcomes.
 
 **Acceptance Criteria**:
-- [ ] Every launch attempt writes a structured log event
-- [ ] Log fields include actor, project, tool, result, reason, duration
-- [ ] `auditLogDir` is configurable and created if missing
+- [x] Every launch attempt writes a structured log event
+- [x] Log fields include actor, project, tool, result, reason, duration
+- [x] `auditLogDir` is configurable and created if missing
 
 **Dependencies**: Task 1.3, 1.4
 
@@ -165,9 +165,9 @@
 **Description**: Confirm command start outcome without maintaining long-running session state.
 
 **Acceptance Criteria**:
-- [ ] Bot reports launch started/failed quickly with reason
-- [ ] No active session lock/queue tracking included
-- [ ] Happy post-launch lifecycle remains out-of-scope and untouched
+- [x] Bot reports launch started/failed quickly with reason
+- [x] No active session lock/queue tracking included
+- [x] Happy post-launch lifecycle remains out-of-scope and untouched
 
 **Dependencies**: Task 1.2, 1.4
 
@@ -180,9 +180,9 @@
 **Description**: Validate and document launch behavior on required host platforms.
 
 **Acceptance Criteria**:
-- [ ] Linux verification results recorded
-- [ ] macOS verification results recorded
-- [ ] Platform-specific caveats documented (PATH/env/spawn behavior)
+- [x] Linux verification results recorded
+- [x] macOS verification results recorded
+- [x] Platform-specific caveats documented (PATH/env/spawn behavior)
 
 **Dependencies**: Task 2.1, 2.2
 
@@ -197,9 +197,9 @@
 **Description**: Validate full user journey and policy/security gates before MVP signoff.
 
 **Acceptance Criteria**:
-- [ ] Authorized user can complete project->tool->launch flow end-to-end
-- [ ] Unauthorized user is denied and logged
-- [ ] Failure scenarios produce correct reason taxonomy and logs
+- [x] Authorized user can complete project->tool->launch flow end-to-end
+- [x] Unauthorized user is denied and logged
+- [x] Failure scenarios produce correct reason taxonomy and logs
 
 **Dependencies**: Task 2.3
 
@@ -212,9 +212,9 @@
 **Description**: Produce formal readiness report covering reliability, security, and operability requirements.
 
 **Acceptance Criteria**:
-- [ ] Success metrics baseline captured from audit logs
-- [ ] Security checklist confirms no arbitrary command path
-- [ ] Final go/no-go signoff documented
+- [x] Success metrics baseline captured from audit logs
+- [x] Security checklist confirms no arbitrary command path
+- [x] Final go/no-go signoff documented
 
 **Dependencies**: Task 3.1
 
@@ -267,11 +267,11 @@
 
 ---
 
-## Ambiguous Requirements
+## Ambiguous Requirements (Resolved)
 
-| Requirement | Clarification Needed |
+| Requirement | Resolution |
 |---|---|
-| Startup success signal | Is process spawn enough, or should we wait for specific Happy readiness output? |
-| Project filtering | Should hidden/system folders be excluded from `/projects` by default? |
-| Windows scope | Include full support in MVP or keep as explicit post-MVP milestone only? |
-| Log retention | Rotation and retention policy for long-running bot deployments |
+| Startup success signal | **Process spawn** — success means the child process started without immediate error (within 2s check window). |
+| Project filtering | **Hidden folders excluded** — directories starting with `.` are filtered from `/projects` listing. |
+| Windows scope | **Post-MVP** — documented caveats in `docs/platform-matrix.md`, deferred to Task 4.1. |
+| Log retention | **Deferred** — logs accumulate in `auditLogDir` as daily JSONL files. Rotation is an operational concern for later. |
