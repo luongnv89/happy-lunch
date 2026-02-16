@@ -1,8 +1,18 @@
-# happy-lunch
+<p align="center">
+  <img src="assets/logo/logo-full.svg" alt="happy-lunch logo" width="360" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)](https://nodejs.org/)
+<p align="center">
+  <strong>Launch your Happy sessions from anywhere — one tap, zero friction.</strong>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-blue.svg" alt="TypeScript" /></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D18-green.svg" alt="Node.js" /></a>
+</p>
+
+---
 
 A secure Telegram bot that launches [Happy](https://github.com/your-happy-repo) CLI sessions in local projects. Authorized users select a project and tool via Telegram, and the bot spawns a detached Happy process — no upstream modifications required.
 
