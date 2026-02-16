@@ -50,6 +50,11 @@ export async function launchTool(
     return launchInTerminalApp(args, projectPath, startTime);
   }
 
+  // Headless mode: wrap in tmux so the tool gets a real TTY
+  if (options.headless) {
+    return launchInTmux(tool, args, projectPath, config, startTime);
+  }
+
   return launchDetached(args, projectPath, config, startTime);
 }
 
@@ -80,6 +85,89 @@ end tell`;
           durationMs: Date.now() - startTime,
         });
       }
+    });
+  });
+}
+
+function tmuxSessionName(tool: string, projectPath: string): string {
+  const project = projectPath.split("/").pop() || "project";
+  // tmux session names: alphanumeric, dot, underscore, hyphen
+  return `happy-${project}-${tool}`.replace(/[^a-zA-Z0-9._-]/g, "-");
+}
+
+function launchInTmux(
+  tool: string,
+  args: string[],
+  projectPath: string,
+  config: Config,
+  startTime: number
+): Promise<LaunchResult> {
+  const session = tmuxSessionName(tool, projectPath);
+  const cmdString = args.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
+
+  return new Promise<LaunchResult>((resolve) => {
+    // Kill existing session with the same name (if any) to avoid conflicts
+    execFile("tmux", ["kill-session", "-t", session], () => {
+      // Ignore errors — session may not exist
+      const child = spawn(
+        "tmux",
+        ["new-session", "-d", "-s", session, "-c", projectPath, cmdString],
+        { detached: true, stdio: "ignore" }
+      );
+
+      let settled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+
+      const settle = (result: LaunchResult) => {
+        if (!settled) {
+          settled = true;
+          if (timer) clearTimeout(timer);
+          resolve(result);
+        }
+      };
+
+      child.on("error", (err: NodeJS.ErrnoException) => {
+        const reasonCode: ReasonCode =
+          err.code === "ENOENT" ? "TOOL_BINARY_NOT_FOUND" : "SPAWN_ERROR";
+        settle({
+          success: false,
+          reasonCode,
+          message:
+            reasonCode === "TOOL_BINARY_NOT_FOUND"
+              ? `tmux not found. Install it with: brew install tmux`
+              : `Failed to start tmux session: ${err.message}`,
+          durationMs: Date.now() - startTime,
+        });
+      });
+
+      child.on("exit", (code) => {
+        if (code === 0) {
+          settle({
+            success: true,
+            message: `Launched "${args.join(" ")}" in tmux session "${session}" at ${projectPath}. Attach with: tmux attach -t ${session}`,
+            durationMs: Date.now() - startTime,
+          });
+        } else {
+          settle({
+            success: false,
+            reasonCode: "SPAWN_ERROR",
+            message: `tmux exited with code ${code}. Session: ${session}`,
+            durationMs: Date.now() - startTime,
+          });
+        }
+      });
+
+      const checkMs = Math.min(2000, config.startupTimeoutMs);
+      timer = setTimeout(() => {
+        child.removeListener("error", () => {});
+        child.removeListener("exit", () => {});
+        try { child.unref(); } catch { /* ignore */ }
+        settle({
+          success: true,
+          message: `Launched "${args.join(" ")}" in tmux session "${session}" at ${projectPath}. Attach with: tmux attach -t ${session}`,
+          durationMs: Date.now() - startTime,
+        });
+      }, checkMs);
     });
   });
 }
