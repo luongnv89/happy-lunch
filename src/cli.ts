@@ -61,6 +61,8 @@ Commands:
   launch <project>  Launch with default tool for a project
   launch <project> <tool>
                     Launch a specific tool for a project
+  launch --headless <project> [tool]
+                    Launch without opening Terminal.app (background)
   bot start         Start the bot as a background process
   bot stop          Stop the running bot
   config            Print current configuration
@@ -84,7 +86,7 @@ function cmdProjects(): void {
   console.log(`\n${projects.length} project(s) found.`);
 }
 
-async function cmdLaunch(projectArg?: string, toolArg?: string): Promise<void> {
+async function cmdLaunch(projectArg?: string, toolArg?: string, headless = false): Promise<void> {
   const config = tryLoadConfig();
 
   let projectName: string;
@@ -158,8 +160,8 @@ async function cmdLaunch(projectArg?: string, toolArg?: string): Promise<void> {
     process.exit(1);
   }
 
-  console.log(`Launching "${toolName}" in ${resolved.path}...`);
-  const result = await launchTool(toolName, resolved.path, config);
+  console.log(`Launching "${toolName}" in ${resolved.path}${headless ? " (headless)" : ""}...`);
+  const result = await launchTool(toolName, resolved.path, config, { headless });
 
   if (result.success) {
     console.log(`OK: ${result.message}`);
@@ -334,9 +336,13 @@ async function main(): Promise<void> {
       cmdProjects();
       break;
 
-    case "launch":
-      await cmdLaunch(args[1], args[2]);
+    case "launch": {
+      const launchArgs = args.slice(1);
+      const headless = launchArgs.includes("--headless");
+      const positional = launchArgs.filter((a) => a !== "--headless");
+      await cmdLaunch(positional[0], positional[1], headless);
       break;
+    }
 
     case "bot":
       if (args[1] === "start") {

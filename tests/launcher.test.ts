@@ -1,9 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { launchTool } from "../src/launcher.js";
 import type { Config } from "../src/types.js";
+
+// Force detached spawn path (not osascript) so spawn-level tests work on macOS
+vi.mock("node:os", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:os")>();
+  return { ...actual, platform: () => "linux" };
+});
+
+const { launchTool } = await import("../src/launcher.js");
 
 let tmpDir: string;
 let config: Config;
@@ -86,5 +93,22 @@ describe("launchTool", () => {
   it("includes durationMs in all results", async () => {
     const result = await launchTool("bash", tmpDir, config);
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("headless option uses detached spawn (not Terminal.app)", async () => {
+    const { TOOL_TEMPLATES } = await import("../src/types.js");
+    const origClaude = TOOL_TEMPLATES.claude;
+    TOOL_TEMPLATES.claude = ["sleep", "10"];
+    try {
+      // Even though tests mock platform to linux, verify headless param is accepted
+      const result = await launchTool("claude", tmpDir, {
+        ...config,
+        startupTimeoutMs: 1000,
+      }, { headless: true });
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("sleep");
+    } finally {
+      TOOL_TEMPLATES.claude = origClaude;
+    }
   });
 });

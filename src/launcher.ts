@@ -1,20 +1,25 @@
-import { spawn } from "node:child_process";
+import { spawn, execFile } from "node:child_process";
+import * as os from "node:os";
 import type { Config, LaunchResult, ReasonCode } from "./types.js";
 import { TOOL_TEMPLATES } from "./types.js";
+
+export interface LaunchOptions {
+  /** Skip Terminal.app and spawn detached (no TTY). Defaults to false. */
+  headless?: boolean;
+}
 
 /**
  * Execute a fixed launch template in the given project directory (Task 1.4 / 2.2).
  *
- * Launch-and-forget model:
- * - Spawns the command as a detached process
- * - Waits briefly to confirm process started (no immediate crash)
- * - Returns success/failure with reason code
- * - Does NOT track the long-running process afterwards
+ * On macOS, opens a new Terminal.app window so the tool gets a real TTY,
+ * unless `options.headless` is true — in which case it spawns detached
+ * with stdio ignored (same as non-macOS platforms).
  */
 export async function launchTool(
   tool: string,
   projectPath: string,
-  config: Config
+  config: Config,
+  options: LaunchOptions = {}
 ): Promise<LaunchResult> {
   const startTime = Date.now();
 
@@ -39,6 +44,52 @@ export async function launchTool(
     };
   }
 
+  // On macOS, open in a new Terminal.app window for a real TTY
+  // unless headless mode is requested (e.g. from Telegram bot)
+  if (os.platform() === "darwin" && !options.headless) {
+    return launchInTerminalApp(args, projectPath, startTime);
+  }
+
+  return launchDetached(args, projectPath, config, startTime);
+}
+
+function launchInTerminalApp(
+  args: string[],
+  projectPath: string,
+  startTime: number
+): Promise<LaunchResult> {
+  const cmdString = args.map((a) => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
+  const script = `tell application "Terminal"
+  activate
+  do script "cd '${projectPath.replace(/'/g, "'\\''")}' && ${cmdString}"
+end tell`;
+
+  return new Promise<LaunchResult>((resolve) => {
+    execFile("osascript", ["-e", script], (err) => {
+      if (err) {
+        resolve({
+          success: false,
+          reasonCode: "SPAWN_ERROR",
+          message: `Failed to open Terminal.app: ${err.message}`,
+          durationMs: Date.now() - startTime,
+        });
+      } else {
+        resolve({
+          success: true,
+          message: `Opened "${args.join(" ")}" in new Terminal window at ${projectPath}`,
+          durationMs: Date.now() - startTime,
+        });
+      }
+    });
+  });
+}
+
+function launchDetached(
+  args: string[],
+  projectPath: string,
+  config: Config,
+  startTime: number
+): Promise<LaunchResult> {
   const [command, ...commandArgs] = args;
 
   return new Promise<LaunchResult>((resolve) => {
