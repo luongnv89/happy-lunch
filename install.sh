@@ -178,6 +178,81 @@ if ! command -v git &>/dev/null; then
 fi
 success "git $(git --version | awk '{print $3}') detected"
 
+# --- Check tmux -------------------------------------------------------------
+check_tmux() {
+  if ! command -v tmux &>/dev/null; then
+    warn "tmux not found. tmux is required for headless launches (Telegram bot)."
+    if [[ "$OS" == "macos" ]]; then
+      if command -v brew &>/dev/null; then
+        info "Installing tmux via Homebrew..."
+        brew install tmux
+      else
+        warn "Install tmux manually: brew install tmux"
+        warn "Happy-Lunch will still work, but headless launches will fail."
+      fi
+    elif [[ "$OS" == "linux" ]]; then
+      if command -v apt-get &>/dev/null; then
+        info "Installing tmux via apt..."
+        sudo apt-get install -y tmux
+      elif command -v dnf &>/dev/null; then
+        info "Installing tmux via dnf..."
+        sudo dnf install -y tmux
+      elif command -v yum &>/dev/null; then
+        info "Installing tmux via yum..."
+        sudo yum install -y tmux
+      else
+        warn "Install tmux manually using your package manager."
+        warn "Happy-Lunch will still work, but headless launches will fail."
+      fi
+    fi
+  fi
+
+  if command -v tmux &>/dev/null; then
+    success "tmux $(tmux -V | awk '{print $2}') detected"
+  else
+    warn "tmux is not installed — headless launches will not work"
+  fi
+}
+
+check_tmux
+
+# --- Check Happy CLI (Claude Code) -----------------------------------------
+check_happy() {
+  local missing=()
+
+  if ! command -v happy &>/dev/null; then
+    missing+=("happy (Claude Code)")
+  else
+    success "happy (Claude Code) $(happy --version 2>/dev/null | head -1 | awk '{print $NF}') detected"
+  fi
+
+  # Check for codex only if it's in the allowed tools
+  if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
+    if ! command -v codex &>/dev/null; then
+      missing+=("codex (OpenAI Codex)")
+    else
+      success "codex detected"
+    fi
+  fi
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo ""
+    warn "Missing tool binaries:"
+    for tool in "${missing[@]}"; do
+      echo -e "  ${YELLOW}•${NC} ${tool}"
+    done
+    echo ""
+    info "Install Claude Code with: npm install -g @anthropic-ai/claude-code"
+    if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
+      info "Install Codex with: npm install -g @openai/codex"
+    fi
+    warn "Happy-Lunch will install, but launches will fail until these tools are available."
+    echo ""
+  fi
+}
+
+check_happy
+
 # --- Interactive prompts for missing required values -------------------------
 prompt_value() {
   local var_name="$1" prompt_text="$2" current_val="$3" required="${4:-true}"
@@ -453,6 +528,37 @@ echo -e "${BOLD}Installation directory:${NC} $INSTALL_DIR"
 echo -e "${BOLD}Workspace root:${NC}        $WORKSPACE_ROOT"
 echo -e "${BOLD}Allowed users:${NC}         $ALLOWED_USERS"
 echo -e "${BOLD}Allowed tools:${NC}         $ALLOWED_TOOLS"
+echo ""
+
+# --- Component status summary ---
+echo -e "${BOLD}Component status:${NC}"
+if command -v node &>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} Node.js $(node --version)"
+else
+  echo -e "  ${RED}✗${NC} Node.js — not found"
+fi
+if command -v tmux &>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} tmux $(tmux -V | awk '{print $2}')"
+else
+  echo -e "  ${RED}✗${NC} tmux — install with: brew install tmux (macOS) or apt install tmux (Linux)"
+fi
+if command -v happy &>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} happy (Claude Code)"
+else
+  echo -e "  ${RED}✗${NC} happy — install with: npm install -g @anthropic-ai/claude-code"
+fi
+if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
+  if command -v codex &>/dev/null; then
+    echo -e "  ${GREEN}✓${NC} codex"
+  else
+    echo -e "  ${RED}✗${NC} codex — install with: npm install -g @openai/codex"
+  fi
+fi
+if command -v git &>/dev/null; then
+  echo -e "  ${GREEN}✓${NC} git $(git --version | awk '{print $3}')"
+else
+  echo -e "  ${RED}✗${NC} git — not found"
+fi
 echo ""
 
 if [[ "$INSTALL_SERVICE" == "true" ]]; then
