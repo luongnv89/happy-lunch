@@ -33,7 +33,36 @@ A secure Telegram bot that launches [Happy](https://github.com/your-happy-repo) 
 - A [Telegram Bot Token](https://core.telegram.org/bots#how-do-i-create-a-bot) from @BotFather
 - Your Telegram user ID (numeric)
 
-### Installation
+### One-Line Install
+
+Install, configure, and optionally run as a service with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/luongnv89/happy-lunch/main/install.sh | bash -s -- \
+  --token "YOUR_BOT_TOKEN" \
+  --users "YOUR_TELEGRAM_USER_ID" \
+  --workspace "/path/to/your/projects"
+```
+
+To also install as a background service (auto-starts on boot):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/luongnv89/happy-lunch/main/install.sh | bash -s -- \
+  --token "YOUR_BOT_TOKEN" \
+  --users "YOUR_TELEGRAM_USER_ID" \
+  --workspace "/path/to/your/projects" \
+  --service
+```
+
+Or run interactively (prompts for required values):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/luongnv89/happy-lunch/main/install.sh | bash
+```
+
+The installer handles Node.js detection/installation, dependency setup, build, configuration, and optional service registration for both Linux (systemd) and macOS (launchd).
+
+### Manual Installation
 
 ```bash
 git clone https://github.com/luongnv89/happy-lunch.git
@@ -90,6 +119,47 @@ npm run dev
 # Production
 npm run build
 npm start
+```
+
+### Run as a Service
+
+If you installed manually and want to add the service later:
+
+```bash
+bash install.sh --service
+```
+
+**Linux (systemd):**
+```bash
+sudo systemctl status happy-lunch     # Check status
+sudo systemctl stop happy-lunch       # Stop
+sudo systemctl start happy-lunch      # Start
+sudo systemctl restart happy-lunch    # Restart
+sudo journalctl -u happy-lunch -f     # View logs
+```
+
+**macOS (launchd):**
+```bash
+launchctl list | grep happy-lunch                                    # Check status
+launchctl unload ~/Library/LaunchAgents/com.happy-lunch.bot.plist    # Stop
+launchctl load -w ~/Library/LaunchAgents/com.happy-lunch.bot.plist   # Start
+tail -f ~/.happy-lunch/logs/launchd-stdout.log                       # View logs
+```
+
+### Uninstall
+
+**Linux:**
+```bash
+sudo systemctl stop happy-lunch && sudo systemctl disable happy-lunch
+sudo rm /etc/systemd/system/happy-lunch.service && sudo systemctl daemon-reload
+rm -rf ~/.happy-lunch
+```
+
+**macOS:**
+```bash
+launchctl unload ~/Library/LaunchAgents/com.happy-lunch.bot.plist
+rm ~/Library/LaunchAgents/com.happy-lunch.bot.plist
+rm -rf ~/.happy-lunch
 ```
 
 ### Usage
