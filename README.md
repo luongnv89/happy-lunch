@@ -14,7 +14,21 @@
 
 ---
 
-A secure Telegram bot that launches [Happy](https://github.com/anthropics/claude-code) (Claude Code) sessions in local projects. Authorized users select a project and tool via Telegram, and the bot spawns a Happy process inside a `tmux` session — no upstream modifications required.
+A secure Telegram bot that launches [Happy](https://github.com/slopus/happy) sessions in local projects. Happy is a mobile/web client for Claude Code and Codex with end-to-end encryption — it wraps the underlying AI tools and lets you monitor and control them remotely from your phone or browser. Authorized users select a project and tool via Telegram, and the bot spawns a Happy process inside a `tmux` session — no upstream modifications required.
+
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.svg" alt="Happy Lunch architecture diagram" width="800" />
+</p>
+
+**How the pieces fit together:**
+
+1. **User** interacts via Telegram, the `happycli` terminal tool, or the Happy mobile/web app
+2. **Happy Lunch** (this project) receives commands from Telegram or CLI, validates permissions, and uses its Launcher to spawn a `happy` process inside a named tmux session on your machine
+3. **Happy CLI** (`happy-coder`) wraps the actual AI coding tools (Claude Code or Codex) and connects to the Happy Server for remote access
+4. **Happy App** (mobile/web) communicates with the Happy Server over E2E encryption, letting you monitor and control the session from your phone or browser
+5. **AI Coding Tools** (Claude Code by Anthropic, Codex by OpenAI) do the actual coding work, wrapped by Happy
 
 ## Key Features
 
@@ -52,21 +66,65 @@ brew install tmux
 sudo apt-get install -y tmux
 ```
 
-#### Claude Code (the `happy` CLI)
+#### Happy (the `happy` CLI)
 
-Install Claude Code, which provides the `happy` command:
+[Happy](https://github.com/slopus/happy) is a mobile/web client for Claude Code and Codex with end-to-end encryption. It wraps the underlying AI tools and lets you monitor and control them remotely from your phone or browser. Happy Lunch uses `happy` as the launcher for AI coding sessions.
+
+**Step A — Install the underlying AI tools:**
+
+Happy wraps these tools, so install the ones you plan to use:
 
 ```bash
+# Claude Code (required for `happy` / default mode)
 npm install -g @anthropic-ai/claude-code
+
+# OpenAI Codex (required for `happy codex`)
+npm install -g @openai/codex
 ```
 
-Verify it's working:
+**Step B — Install Happy CLI:**
+
+```bash
+npm install -g happy-coder
+```
+
+Verify it's installed:
 
 ```bash
 happy --version
 ```
 
-> **Note**: If you also want to use OpenAI Codex, install it separately and ensure it's on your `PATH`.
+**Step C — Install the mobile/web app (optional, for remote access):**
+
+| Platform | Link |
+|----------|------|
+| **iOS** | [App Store](https://apps.apple.com/us/app/happy-claude-code-client/id6748571505) |
+| **Android** | [Google Play](https://play.google.com/store/apps/details?id=com.ex3ndr.happy) |
+| **Web** | [app.happy.engineering](https://app.happy.engineering) |
+
+**Step D — Pair your devices (if using mobile/web app):**
+
+Run the auth command to display a QR code:
+
+```bash
+happy --auth
+```
+
+Open the mobile/web app and scan the QR code (or enter the manual pairing code) to link your phone to your computer.
+
+**Step E — Verify the setup:**
+
+Start a session to confirm everything works:
+
+```bash
+# Claude Code session (default)
+happy
+
+# Codex session
+happy codex
+```
+
+Once paired, you can control sessions from your phone — press any key on your computer to regain local control.
 
 ### Step 2: Create a Telegram bot
 
@@ -253,13 +311,66 @@ tmux kill-session -t <name> # Stop a session
 
 ## Run as a Service
 
-If you installed manually and want to add the service later:
+### Option A: Using the install script
+
+If you used the one-line installer, pass `--service` to register the service automatically:
 
 ```bash
 bash install.sh --service
 ```
 
-**Linux (systemd):**
+### Option B: Manual service setup
+
+If you cloned and built manually, follow the instructions for your platform below. Replace the paths if your project is not at the default location.
+
+#### Linux (systemd)
+
+Create the service file:
+
+```bash
+sudo tee /etc/systemd/system/happy-lunch.service > /dev/null <<EOF
+[Unit]
+Description=Happy-Lunch Telegram Bot
+Documentation=https://github.com/luongnv89/happy-lunch
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$(pwd)
+ExecStart=$(which node) $(pwd)/dist/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=happy-lunch
+
+# Load the .env file for TELEGRAM_BOT_TOKEN
+EnvironmentFile=$(pwd)/.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$(pwd)/logs
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable happy-lunch
+sudo systemctl start happy-lunch
+```
+
+Manage the service:
+
 ```bash
 sudo systemctl status happy-lunch     # Check status
 sudo systemctl stop happy-lunch       # Stop
@@ -268,12 +379,75 @@ sudo systemctl restart happy-lunch    # Restart
 sudo journalctl -u happy-lunch -f     # View logs
 ```
 
-**macOS (launchd):**
+#### macOS (launchd)
+
+Create the plist file:
+
+```bash
+mkdir -p ~/Library/LaunchAgents
+
+cat > ~/Library/LaunchAgents/com.happy-lunch.bot.plist <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.happy-lunch.bot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>$(which node)</string>
+        <string>$(pwd)/dist/index.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>$(pwd)</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>TELEGRAM_BOT_TOKEN</key>
+        <string>YOUR_BOT_TOKEN</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>$(pwd)/logs/launchd-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>$(pwd)/logs/launchd-stderr.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>
+EOF
+```
+
+> **Note**: Replace `YOUR_BOT_TOKEN` in the plist with your actual Telegram bot token, since launchd does not load `.env` files.
+
+Load and start:
+
+```bash
+launchctl load -w ~/Library/LaunchAgents/com.happy-lunch.bot.plist
+```
+
+Manage the service:
+
 ```bash
 launchctl list | grep happy-lunch                                    # Check status
 launchctl unload ~/Library/LaunchAgents/com.happy-lunch.bot.plist    # Stop
 launchctl load -w ~/Library/LaunchAgents/com.happy-lunch.bot.plist   # Start
-tail -f ~/.happy-lunch/logs/launchd-stdout.log                       # View logs
+tail -f logs/launchd-stdout.log                                      # View logs
 ```
 
 ## Uninstall
@@ -282,14 +456,14 @@ tail -f ~/.happy-lunch/logs/launchd-stdout.log                       # View logs
 ```bash
 sudo systemctl stop happy-lunch && sudo systemctl disable happy-lunch
 sudo rm /etc/systemd/system/happy-lunch.service && sudo systemctl daemon-reload
-rm -rf ~/.happy-lunch
+rm -rf ~/.happy-lunch    # if installed via install.sh
 ```
 
 **macOS:**
 ```bash
 launchctl unload ~/Library/LaunchAgents/com.happy-lunch.bot.plist
 rm ~/Library/LaunchAgents/com.happy-lunch.bot.plist
-rm -rf ~/.happy-lunch
+rm -rf ~/.happy-lunch    # if installed via install.sh
 ```
 
 ## Project Structure

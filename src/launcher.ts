@@ -1,7 +1,57 @@
-import { spawn, execFile } from "node:child_process";
+import { spawn, execFile, execFileSync } from "node:child_process";
 import * as os from "node:os";
 import type { Config, LaunchResult, ReasonCode } from "./types.js";
 import { TOOL_TEMPLATES } from "./types.js";
+
+export interface SessionInfo {
+  name: string;
+  /** Parsed project name from the session name (happy-<project>-<tool>) */
+  project: string;
+  /** Parsed tool name from the session name */
+  tool: string;
+}
+
+/**
+ * List running happy-lunch tmux sessions.
+ */
+export function listSessions(): SessionInfo[] {
+  try {
+    const output = execFileSync("tmux", ["list-sessions", "-F", "#{session_name}"], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return output
+      .trim()
+      .split("\n")
+      .filter((name) => name.startsWith("happy-"))
+      .map((name) => {
+        // Parse happy-<project>-<tool>
+        const parts = name.split("-");
+        const tool = parts[parts.length - 1];
+        const project = parts.slice(1, -1).join("-");
+        return { name, project, tool };
+      });
+  } catch {
+    // tmux not running or no sessions
+    return [];
+  }
+}
+
+/**
+ * Stop a running tmux session by name.
+ * Returns true if the session was killed, false otherwise.
+ */
+export function stopSession(sessionName: string): { success: boolean; message: string } {
+  try {
+    execFileSync("tmux", ["kill-session", "-t", sessionName], {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    return { success: true, message: `Stopped session "${sessionName}".` };
+  } catch {
+    return { success: false, message: `Session "${sessionName}" not found or already stopped.` };
+  }
+}
 
 export interface LaunchOptions {
   /** Skip Terminal.app and spawn detached (no TTY). Defaults to false. */

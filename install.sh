@@ -216,23 +216,14 @@ check_tmux() {
 
 check_tmux
 
-# --- Check Happy CLI (Claude Code) -----------------------------------------
+# --- Check Happy CLI (happy-coder) -----------------------------------------
 check_happy() {
   local missing=()
 
   if ! command -v happy &>/dev/null; then
-    missing+=("happy (Claude Code)")
+    missing+=("happy (happy-coder)")
   else
-    success "happy (Claude Code) $(happy --version 2>/dev/null | head -1 | awk '{print $NF}') detected"
-  fi
-
-  # Check for codex only if it's in the allowed tools
-  if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
-    if ! command -v codex &>/dev/null; then
-      missing+=("codex (OpenAI Codex)")
-    else
-      success "codex detected"
-    fi
+    success "happy (happy-coder) $(happy --version 2>/dev/null | head -1 | awk '{print $NF}') detected"
   fi
 
   if [[ ${#missing[@]} -gt 0 ]]; then
@@ -242,11 +233,10 @@ check_happy() {
       echo -e "  ${YELLOW}•${NC} ${tool}"
     done
     echo ""
-    info "Install Claude Code with: npm install -g @anthropic-ai/claude-code"
-    if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
-      info "Install Codex with: npm install -g @openai/codex"
-    fi
-    warn "Happy-Lunch will install, but launches will fail until these tools are available."
+    info "Install Happy with: npm install -g happy-coder"
+    info "Then pair your device: happy --auth"
+    info "See https://happy.engineering/docs/quick-start/ for full setup"
+    warn "Happy-Lunch will install, but launches will fail until happy is available."
     echo ""
   fi
 }
@@ -543,16 +533,9 @@ else
   echo -e "  ${RED}✗${NC} tmux — install with: brew install tmux (macOS) or apt install tmux (Linux)"
 fi
 if command -v happy &>/dev/null; then
-  echo -e "  ${GREEN}✓${NC} happy (Claude Code)"
+  echo -e "  ${GREEN}✓${NC} happy (happy-coder)"
 else
-  echo -e "  ${RED}✗${NC} happy — install with: npm install -g @anthropic-ai/claude-code"
-fi
-if [[ "$ALLOWED_TOOLS" == *"codex"* ]]; then
-  if command -v codex &>/dev/null; then
-    echo -e "  ${GREEN}✓${NC} codex"
-  else
-    echo -e "  ${RED}✗${NC} codex — install with: npm install -g @openai/codex"
-  fi
+  echo -e "  ${RED}✗${NC} happy — install with: npm install -g happy-coder && happy --auth"
 fi
 if command -v git &>/dev/null; then
   echo -e "  ${GREEN}✓${NC} git $(git --version | awk '{print $3}')"

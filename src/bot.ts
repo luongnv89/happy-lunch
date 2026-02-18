@@ -6,7 +6,7 @@ import type {
 } from "./types.js";
 import { TOOL_TEMPLATES } from "./types.js";
 import { listProjects, resolveProject } from "./workspace.js";
-import { launchTool } from "./launcher.js";
+import { launchTool, listSessions, stopSession } from "./launcher.js";
 import { writeAuditLog, createAuditEntry } from "./audit.js";
 
 // Per-chat conversation state
@@ -48,6 +48,7 @@ export function createBot(token: string, config: Config): TelegramBot {
   // Register commands so Telegram shows them when user types "/"
   bot.setMyCommands([
     { command: "launch", description: "Start a Happy session" },
+    { command: "stop", description: "Stop a running session" },
     { command: "projects", description: "List available projects" },
     { command: "status", description: "Show current state" },
     { command: "cancel", description: "Cancel current flow" },
@@ -66,7 +67,7 @@ export function createBot(token: string, config: Config): TelegramBot {
     resetState(chatId);
     bot.sendMessage(
       chatId,
-      "Welcome to Happy Launcher!\n\nCommands:\n/launch — Start a Happy session\n/projects — List available projects\n/status — Show current state\n/cancel — Cancel current flow"
+      "Welcome to Happy Launcher!\n\nCommands:\n/launch — Start a Happy session\n/stop — Stop a running session\n/projects — List available projects\n/status — Show current state\n/cancel — Cancel current flow"
     );
   });
 
@@ -151,6 +152,35 @@ export function createBot(token: string, config: Config): TelegramBot {
     bot.sendMessage(chatId, "Cancelled. Use /launch to start over.");
   });
 
+  // --- /stop command ---
+  bot.onText(/\/stop/, (msg) => {
+    const chatId = msg.chat.id;
+    const userId = msg.from?.id;
+
+    if (!userId || !isAuthorized(userId, config)) {
+      handleUnauthorized(bot, chatId, userId, config);
+      return;
+    }
+
+    const sessions = listSessions();
+    if (sessions.length === 0) {
+      bot.sendMessage(chatId, "No running sessions.");
+      return;
+    }
+
+    const state = getState(chatId);
+    state.step = "select_stop";
+    state.sessionOptions = sessions.map((s) => s.name);
+
+    const keyboard = sessions.map((s, i) => [
+      { text: `${s.project} / ${s.tool}`, callback_data: `s:${i}` },
+    ]);
+
+    bot.sendMessage(chatId, "Select a session to stop:", {
+      reply_markup: { inline_keyboard: keyboard },
+    });
+  });
+
   // --- Callback query handler (inline keyboard presses) ---
   bot.on("callback_query", async (query) => {
     const chatId = query.message?.chat.id;
@@ -170,6 +200,23 @@ export function createBot(token: string, config: Config): TelegramBot {
 
     const state = getState(chatId);
     bot.answerCallbackQuery(query.id);
+
+    // --- Stop session selection step ---
+    if (state.step === "select_stop" && data.startsWith("s:")) {
+      const index = parseInt(data.slice(2), 10);
+      const sessionName = state.sessionOptions?.[index];
+
+      if (!sessionName) {
+        bot.sendMessage(chatId, "Invalid selection. Use /stop to try again.");
+        resetState(chatId);
+        return;
+      }
+
+      const result = stopSession(sessionName);
+      bot.sendMessage(chatId, result.message);
+      resetState(chatId);
+      return;
+    }
 
     // --- Project selection step (index-based) ---
     if (state.step === "select_project" && data.startsWith("p:")) {
