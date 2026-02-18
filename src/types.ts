@@ -55,7 +55,7 @@ export interface AuditEntry {
 
 // --- Conversation state for deterministic UX (Task 1.3) ---
 
-export type ConversationStep = "idle" | "select_project" | "select_tool";
+export type ConversationStep = "idle" | "select_project" | "select_tool" | "select_stop";
 
 export interface ConversationState {
   step: ConversationStep;
@@ -63,6 +63,7 @@ export interface ConversationState {
   selectedProject?: string;
   resolvedProjectPath?: string;
   selectedTool?: string;
+  sessionOptions?: string[];
 }
 
 // --- Launch result (Task 1.4 / 2.2) ---

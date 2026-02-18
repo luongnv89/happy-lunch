@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { config as loadEnv } from "dotenv";
 import { loadConfig } from "./config.js";
 import { listProjects, resolveProject } from "./workspace.js";
-import { launchTool } from "./launcher.js";
+import { launchTool, listSessions, stopSession } from "./launcher.js";
 import { TOOL_TEMPLATES } from "./types.js";
 import type { Config } from "./types.js";
 
@@ -63,6 +63,10 @@ Commands:
                     Launch a specific tool for a project
   launch --headless <project> [tool]
                     Launch without opening Terminal.app (background)
+  stop              Interactive: pick a running session to stop
+  stop <session>    Stop a specific session by name
+  stop --all        Stop all running sessions
+  sessions          List running sessions
   bot start         Start the bot as a background process
   bot stop          Stop the running bot
   config            Print current configuration
@@ -168,6 +172,84 @@ async function cmdLaunch(projectArg?: string, toolArg?: string, headless = false
   } else {
     console.error(`FAILED: ${result.message}`);
     process.exit(1);
+  }
+}
+
+function cmdSessions(): void {
+  const sessions = listSessions();
+  if (sessions.length === 0) {
+    console.log("No running sessions.");
+    return;
+  }
+  console.log(`Running sessions:\n`);
+  for (const s of sessions) {
+    console.log(`  ${s.name}  (project: ${s.project}, tool: ${s.tool})`);
+  }
+  console.log(`\n${sessions.length} session(s) running.`);
+}
+
+async function cmdStop(sessionArg?: string, all = false): Promise<void> {
+  if (all) {
+    const sessions = listSessions();
+    if (sessions.length === 0) {
+      console.log("No running sessions.");
+      return;
+    }
+    for (const s of sessions) {
+      const result = stopSession(s.name);
+      console.log(result.message);
+    }
+    return;
+  }
+
+  if (sessionArg) {
+    const result = stopSession(sessionArg);
+    if (result.success) {
+      console.log(result.message);
+    } else {
+      console.error(result.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // Interactive mode
+  if (!process.stdin.isTTY) {
+    console.error(
+      "Error: Interactive mode requires a TTY. Provide session name as argument."
+    );
+    process.exit(1);
+  }
+
+  const sessions = listSessions();
+  if (sessions.length === 0) {
+    console.log("No running sessions.");
+    return;
+  }
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    console.log("Running sessions:\n");
+    for (let i = 0; i < sessions.length; i++) {
+      console.log(`  [${i + 1}] ${sessions[i].name}  (${sessions[i].project} / ${sessions[i].tool})`);
+    }
+    console.log();
+
+    const input = await promptNumber(rl, "Select session to stop (number): ");
+    const index = parseInt(input, 10) - 1;
+    if (isNaN(index) || index < 0 || index >= sessions.length) {
+      console.error("Invalid selection.");
+      process.exit(1);
+    }
+
+    const result = stopSession(sessions[index].name);
+    console.log(result.message);
+  } finally {
+    rl.close();
   }
 }
 
@@ -341,6 +423,18 @@ async function main(): Promise<void> {
       const headless = launchArgs.includes("--headless");
       const positional = launchArgs.filter((a) => a !== "--headless");
       await cmdLaunch(positional[0], positional[1], headless);
+      break;
+    }
+
+    case "sessions":
+      cmdSessions();
+      break;
+
+    case "stop": {
+      const stopArgs = args.slice(1);
+      const allFlag = stopArgs.includes("--all");
+      const positional = stopArgs.filter((a) => a !== "--all");
+      await cmdStop(positional[0], allFlag);
       break;
     }
 

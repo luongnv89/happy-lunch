@@ -1,0 +1,70 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4A90D9', 'primaryTextColor': '#fff', 'primaryBorderColor': '#2E6BA6', 'lineColor': '#555', 'secondaryColor': '#F5A623', 'tertiaryColor': '#7ED321', 'background': '#ffffff', 'fontSize': '14px'}}}%%
+
+graph TB
+    subgraph USER["User"]
+        PHONE["Phone / Browser"]
+        TELEGRAM["Telegram App"]
+        TERMINAL["Terminal"]
+    end
+
+    subgraph HAPPY_APP["Happy (slopus/happy)"]
+        HAPPY_MOBILE["Happy Mobile App<br/>(iOS / Android)"]
+        HAPPY_WEB["Happy Web App<br/>(app.happy.engineering)"]
+        HAPPY_CLI["Happy CLI<br/>(npm: happy-coder)"]
+        HAPPY_SERVER["Happy Server<br/>(E2E encrypted sync)"]
+    end
+
+    subgraph HAPPY_LUNCH["Happy Lunch (this project)"]
+        BOT["Telegram Bot<br/>(node-telegram-bot-api)"]
+        CLI["happycli<br/>(CLI tool)"]
+        LAUNCHER["Launcher<br/>(tmux / Terminal.app)"]
+        AUDIT["Audit Log<br/>(JSONL)"]
+    end
+
+    subgraph SESSION["tmux Session (on your machine)"]
+        HAPPY_PROC["happy / happy codex"]
+    end
+
+    subgraph AI_TOOLS["AI Coding Tools"]
+        CLAUDE["Claude Code<br/>(Anthropic)"]
+        CODEX["Codex<br/>(OpenAI)"]
+    end
+
+    %% User interactions
+    PHONE -->|"remote control"| HAPPY_MOBILE
+    PHONE -->|"remote control"| HAPPY_WEB
+    TELEGRAM -->|"/launch, /stop"| BOT
+    TERMINAL -->|"happycli launch"| CLI
+
+    %% Happy app connections
+    HAPPY_MOBILE <-->|"E2E encrypted"| HAPPY_SERVER
+    HAPPY_WEB <-->|"E2E encrypted"| HAPPY_SERVER
+    HAPPY_SERVER <-->|"E2E encrypted"| HAPPY_CLI
+
+    %% Happy Lunch internals
+    BOT --> LAUNCHER
+    BOT --> AUDIT
+    CLI --> LAUNCHER
+
+    %% Launcher spawns happy process
+    LAUNCHER -->|"spawns in tmux"| HAPPY_PROC
+
+    %% Happy process wraps AI tools
+    HAPPY_PROC -->|"happy"| CLAUDE
+    HAPPY_PROC -->|"happy codex"| CODEX
+
+    %% Happy CLI connects to session
+    HAPPY_CLI -.->|"wraps"| HAPPY_PROC
+
+    %% Styling
+    classDef userNode fill:#E8F4FD,stroke:#4A90D9,stroke-width:2px,color:#333
+    classDef happyAppNode fill:#FFF3E0,stroke:#F5A623,stroke-width:2px,color:#333
+    classDef happyLunchNode fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#333
+    classDef sessionNode fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px,color:#333
+    classDef aiNode fill:#FFEBEE,stroke:#E53935,stroke-width:2px,color:#333
+
+    class PHONE,TELEGRAM,TERMINAL userNode
+    class HAPPY_MOBILE,HAPPY_WEB,HAPPY_CLI,HAPPY_SERVER happyAppNode
+    class BOT,CLI,LAUNCHER,AUDIT happyLunchNode
+    class HAPPY_PROC sessionNode
+    class CLAUDE,CODEX aiNode
