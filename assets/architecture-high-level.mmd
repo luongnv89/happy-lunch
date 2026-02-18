@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4A90D9', 'primaryTextColor': '#fff', 'primaryBorderColor': '#2E6BA6', 'lineColor': '#555', 'secondaryColor': '#F5A623', 'tertiaryColor': '#7ED321', 'background': '#ffffff', 'fontSize': '16px'}}}%%
+
+graph LR
+    subgraph MOBILE["Mobile"]
+        TELEGRAM["Telegram"]
+        HAPPY_APP["Happy App<br/>(iOS / Android / Web)"]
+    end
+
+    subgraph HOST["Host Machine"]
+        HAPPY_LUNCH["Happy Lunch<br/>(Telegram Bot + CLI)"]
+        HAPPY_CLI["Happy CLI<br/>(happy-coder)"]
+        AI["Claude Code / Codex"]
+    end
+
+    TELEGRAM -->|"/launch /stop"| HAPPY_LUNCH
+    HAPPY_LUNCH -->|"spawns"| HAPPY_CLI
+    HAPPY_CLI -->|"wraps"| AI
+    HAPPY_APP <-->|"remote control<br/>(E2E encrypted)"| HAPPY_CLI
+
+    %% Styling
+    classDef mobileNode fill:#E8F4FD,stroke:#4A90D9,stroke-width:2px,color:#333
+    classDef hostNode fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#333
+    classDef lunchNode fill:#FFF3E0,stroke:#F5A623,stroke-width:2px,color:#333
+    classDef aiNode fill:#FFEBEE,stroke:#E53935,stroke-width:2px,color:#333
+
+    class TELEGRAM,HAPPY_APP mobileNode
+    class HAPPY_CLI hostNode
+    class HAPPY_LUNCH lunchNode
+    class AI aiNode

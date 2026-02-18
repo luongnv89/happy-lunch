@@ -19,16 +19,25 @@ A secure Telegram bot that launches [Happy](https://github.com/slopus/happy) ses
 ## Architecture
 
 <p align="center">
-  <img src="assets/architecture.svg" alt="Happy Lunch architecture diagram" width="800" />
+  <img src="assets/architecture-high-level.svg" alt="Happy Lunch high-level architecture" width="800" />
 </p>
 
 **How the pieces fit together:**
 
-1. **User** interacts via Telegram, the `happycli` terminal tool, or the Happy mobile/web app
-2. **Happy Lunch** (this project) receives commands from Telegram or CLI, validates permissions, and uses its Launcher to spawn a `happy` process inside a named tmux session on your machine
-3. **Happy CLI** (`happy-coder`) wraps the actual AI coding tools (Claude Code or Codex) and connects to the Happy Server for remote access
-4. **Happy App** (mobile/web) communicates with the Happy Server over E2E encryption, letting you monitor and control the session from your phone or browser
-5. **AI Coding Tools** (Claude Code by Anthropic, Codex by OpenAI) do the actual coding work, wrapped by Happy
+1. **Telegram** (mobile) — send `/launch` or `/stop` to the bot to start/stop coding sessions remotely
+2. **Happy Lunch** (host machine) — receives commands, validates permissions, and spawns a `happy` process inside a named tmux session
+3. **Happy CLI** (host machine) — the `happy-coder` wrapper that manages the AI coding session and enables remote access via the Happy App
+4. **Claude Code / Codex** (host machine) — the AI coding tools that do the actual work, wrapped by Happy CLI
+5. **Happy App** (mobile/web) — monitor and control the running session from your phone or browser over E2E encryption
+
+<details>
+<summary><strong>Detailed architecture</strong></summary>
+
+<p align="center">
+  <img src="assets/architecture.svg" alt="Happy Lunch detailed architecture diagram" width="800" />
+</p>
+
+</details>
 
 ## Key Features
 
