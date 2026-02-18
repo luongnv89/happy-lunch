@@ -61,8 +61,6 @@ Commands:
   launch <project>  Launch with default tool for a project
   launch <project> <tool>
                     Launch a specific tool for a project
-  launch --headless <project> [tool]
-                    Launch without opening Terminal.app (background)
   stop              Interactive: pick a running session to stop
   stop <session>    Stop a specific session by name
   stop --all        Stop all running sessions
@@ -90,7 +88,7 @@ function cmdProjects(): void {
   console.log(`\n${projects.length} project(s) found.`);
 }
 
-async function cmdLaunch(projectArg?: string, toolArg?: string, headless = false): Promise<void> {
+async function cmdLaunch(projectArg?: string, toolArg?: string): Promise<void> {
   const config = tryLoadConfig();
 
   let projectName: string;
@@ -164,8 +162,8 @@ async function cmdLaunch(projectArg?: string, toolArg?: string, headless = false
     process.exit(1);
   }
 
-  console.log(`Launching "${toolName}" in ${resolved.path}${headless ? " (headless)" : ""}...`);
-  const result = await launchTool(toolName, resolved.path, config, { headless });
+  console.log(`Launching "${toolName}" in ${resolved.path}...`);
+  const result = await launchTool(toolName, resolved.path, config);
 
   if (result.success) {
     console.log(`OK: ${result.message}`);
@@ -420,9 +418,7 @@ async function main(): Promise<void> {
 
     case "launch": {
       const launchArgs = args.slice(1);
-      const headless = launchArgs.includes("--headless");
-      const positional = launchArgs.filter((a) => a !== "--headless");
-      await cmdLaunch(positional[0], positional[1], headless);
+      await cmdLaunch(launchArgs[0], launchArgs[1]);
       break;
     }
 

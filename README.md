@@ -43,7 +43,7 @@ A secure Telegram bot that launches [Happy](https://github.com/slopus/happy) ses
 
 - **Security-first** — Strict allowlists for users, tools, and workspace paths
 - **Template-only execution** — No arbitrary commands; only predefined templates (`happy`, `happy codex`)
-- **Headless tmux launch** — Tools run in named tmux sessions with real TTY support
+- **tmux launch** — Tools run in named tmux sessions with real TTY support
 - **Deterministic UX** — Forced workflow: select project → select tool → launch → status
 - **Path boundary enforcement** — Canonicalized paths with symlink escape prevention
 - **Audit logging** — Structured JSONL logs for every action (success, failure, denied)
@@ -65,7 +65,7 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
-#### tmux (required for headless launches)
+#### tmux (required)
 
 ```bash
 # macOS
@@ -256,7 +256,6 @@ Commands:
   launch                            Interactive: pick project → pick tool → launch
   launch <project>                  Launch with default tool for a project
   launch <project> <tool>           Launch a specific tool for a project
-  launch --headless <project> [tool]  Launch in tmux without Terminal.app
   bot start                         Start the bot as a background process
   bot stop                          Stop the running bot
   config                            Print current configuration
@@ -270,11 +269,8 @@ Commands:
 # List projects
 happycli projects
 
-# Launch Claude Code in a project (opens Terminal.app on macOS)
+# Launch Claude Code in a project (spawns tmux session)
 happycli launch my-project claude
-
-# Launch in background via tmux (no Terminal.app)
-happycli launch --headless my-project claude
 
 # Start/stop the Telegram bot
 happycli bot start
@@ -295,15 +291,11 @@ happycli status
 
 ## How It Works
 
-### Launch modes
+### tmux sessions
 
-| Mode | When | What happens |
-|------|------|--------------|
-| **Terminal.app** | macOS CLI without `--headless` | Opens a new Terminal.app window via AppleScript |
-| **tmux (headless)** | Telegram bot or `--headless` flag | Spawns a named tmux session (`happy-<project>-<tool>`) with a real PTY |
-| **Detached** | Non-macOS without `--headless` | Spawns a detached process with stdio ignored |
+All launches spawn a named tmux session so the tool gets a real TTY. This works on all platforms (macOS, Linux).
 
-### tmux session naming
+#### Session naming
 
 Sessions are named `happy-<project>-<tool>`, e.g.:
 
@@ -486,7 +478,7 @@ happy-lunch/
 │   ├── types.ts        # Shared types, schemas, error taxonomy
 │   ├── bot.ts          # Telegram command handlers & UX flow
 │   ├── workspace.ts    # Project discovery & path validation
-│   ├── launcher.ts     # Process spawning (Terminal.app / tmux / detached)
+│   ├── launcher.ts     # Process spawning (tmux)
 │   └── audit.ts        # JSONL audit logging
 ├── tests/              # Unit tests (Vitest)
 ├── docs/               # Project documentation
@@ -504,7 +496,7 @@ happy-lunch/
 - **Validation**: [Zod](https://zod.dev)
 - **Testing**: [Vitest](https://vitest.dev)
 - **Environment**: [dotenv](https://github.com/motdotla/dotenv)
-- **Session Management**: [tmux](https://github.com/tmux/tmux) (for headless TTY)
+- **Session Management**: [tmux](https://github.com/tmux/tmux) (named sessions with real TTY)
 
 ## Testing
 
