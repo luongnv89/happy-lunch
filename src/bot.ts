@@ -287,8 +287,8 @@ export function createBot(token: string, config: Config): TelegramBot {
         `Launching "${templateStr}" in ${projectName}...`
       );
 
-      // Execute the launch (headless — bot has no terminal)
-      const result = await launchTool(tool, projectPath, config, { headless: true });
+      // Execute the launch
+      const result = await launchTool(tool, projectPath, config);
 
       // Build and write audit entry
       const entry = createAuditEntry(userId, chatId);
