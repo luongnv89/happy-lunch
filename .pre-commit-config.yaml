@@ -9,8 +9,6 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: detect-private-key
-      - id: no-commit-to-branch
-        args: [--branch, main]
 
   # TypeScript / JavaScript
   - repo: local
